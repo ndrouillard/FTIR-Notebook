@@ -14,7 +14,7 @@ def stream(rate,size):
     MY_SIZE = size # number of samples we'll capture - 12288 is the maximum size
 
 #     x = np.arange(MY_SIZE)/float(MY_RATE)
-    
+
     print("Starting: Attempting to open one devices...")
 
     #Attempt to open 1 device at /dev/ttyUSBx
@@ -26,7 +26,7 @@ def stream(rate,size):
     else:
         #Successfully opened one device
         #Report the number of devices opened, and the library version used
-        print('\nNumber of devices opened: %s' ,BL_Count(BL_COUNT_DEVICE))
+        #print('\nNumber of devices opened: %s' ,BL_Count(BL_COUNT_DEVICE))
         print(" Library: %s (%s)\n\n" , (BL_Version(BL_VERSION_LIBRARY),BL_Version(BL_VERSION_BINDING)))
 
         #Select the first device opened, found at location 0 by default.
@@ -34,8 +34,8 @@ def stream(rate,size):
 
         #Setup acquisition in FAST mode, where the whole of the 12288 samples in
         #the buffer are used by one channel alone.
-    #     BL_Mode(BL_MODE_FAST)
-        BL_Mode(BL_MODE_STREAM)
+        BL_Mode(BL_MODE_FAST)
+#         BL_Mode(BL_MODE_STREAM)
 
         #Report the capture details
         print(" Capture: %d @ %.0fHz = %fs" , (BL_Size(),BL_Rate(MY_RATE),BL_Time()))
@@ -53,6 +53,7 @@ def stream(rate,size):
         #Setup a falling-edge trigger at 0.999V.
         #Other options are BL_TRIG_RISE, BL_TRIG_HIGH, BL_TRIG_LOW.
         BL_Trigger(0.999,BL_TRIG_FALL); # This is optional when untriggered BL_Trace() is used
+        #BL_Trigger(4)
 
         BL_Select(BL_SELECT_SOURCE,BL_SOURCE_POD); # use the POD input - the only one available
         BL_Range(BL_Count(BL_COUNT_RANGE)); # maximum range for y-axis - use this whenever possible
@@ -66,14 +67,14 @@ def stream(rate,size):
 
         #Capture analog data synchronously to the Bitscope device's buffer.
         #If a trigger event is not received in 0.1sec, auto trigger happens.
-        #BL_Trace(), when without any arguments, captures immediately, no trigger needed.
-        print("trace {}",format(BL_Trace(0.01, BL_SYNCHRONOUS)))
+        BL_Trace()#, when without any arguments, captures immediately, no trigger needed.
+        #print("trace {}",format(BL_Trace(0.01, BL_SYNCHRONOUS)))
 
         #Transfer the captured data to our PC's memory using the USB link
         DATA = BL_Acquire()
-        x = np.arange(len(DATA))/float(MY_RATE)
-        
-        return(x,np.array(DATA))
+        #x = np.arange(len(DATA))/float(MY_RATE)
+
+        return(np.array(DATA))
 
         #print(DATA)
 #         plt.figure()
@@ -84,4 +85,3 @@ def stream(rate,size):
 #         BL_Close()
 
 #         print("Finished: Library closed, resources released.")
-
