@@ -34,8 +34,8 @@ def stream(rate,size):
 
         #Setup acquisition in FAST mode, where the whole of the 12288 samples in
         #the buffer are used by one channel alone.
-        BL_Mode(BL_MODE_FAST)
-#         BL_Mode(BL_MODE_STREAM)
+        #BL_Mode(BL_MODE_FAST)
+        BL_Mode(BL_MODE_STREAM)
 
         #Report the capture details
         print(" Capture: %d @ %.0fHz = %fs" , (BL_Size(),BL_Rate(MY_RATE),BL_Time()))
