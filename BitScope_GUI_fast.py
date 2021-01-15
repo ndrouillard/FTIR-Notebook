@@ -6,6 +6,7 @@ A special thanks is owed to Aananth Kanagaraj (Codenio)
 
 Note: use BL_STREAM mode in bitlib_read_data_for_GUI
 """
+import numba 
 import tkinter as tk
 import tkinter.font as font #this is needed but unused?
 from tkinter.filedialog import asksaveasfile
@@ -37,8 +38,8 @@ myFont = tk.font.Font(family='Helvetica', size=15, weight='bold')
 
 #%% Major variables
 global Nt, scanRate, now
-scanRate = 1000000 #1000000 is the default sample rate of the BitScope
-Nt = 80000 #maximum number of points from BitScope
+scanRate = 20000000 #1000000 is the default sample rate of the BitScope, 20 MHz is the max
+Nt = 60000#12228 #maximum is 12228 but 60,000 is much faster?
 myFont = ("Helvetica",12)
 now = str(datetime.now()) #this is for naming the csv file by the date
 #%%
@@ -79,32 +80,31 @@ def record():
     dw = w_vec[1]-w_vec[0]
     yw_vec = np.fft.fftshift(np.fft.fft(np.fft.fftshift(y)))
 
-    all_y = np.append(all_y, y)
-    all_t_vec = np.append(all_t_vec, t_vec)
-    all_w_vec = np.append(all_w_vec, w_vec)
-    all_yw_vec = np.append(all_yw_vec, yw_vec)
-
-    return (all_t_vec, all_y, all_w_vec, all_yw_vec)
-
-    dummy_button.after(int(1e-3), record)
+    return (t_vec, y, w_vec, yw_vec)
 
 dummy_button = tk.Button(root, text="Example")
-dummy_button.after(int(1e-3), record)
+dummy_button.after(int(1e-6), record)
 
 def append_data():
-    global t_vec, y, w_vec, all_t_vec, all_y, all_w_vec, all_yw_vec
+
+    global t_vec, y, w_vec, yw_vec, all_t_vec, all_y, all_w_vec, all_yw_vec
 
     all_y = np.append(all_y, y)
     all_t_vec = np.append(all_t_vec, t_vec)
     all_w_vec = np.append(all_w_vec, w_vec)
     all_yw_vec = np.append(all_yw_vec, yw_vec)
 
+    count = len(all_yw_vec)
+    data_count_disp.config(text=count)
+    data_count_disp.after(int(1e-6),append_data)
+
     return (all_t_vec, all_y, all_w_vec, all_yw_vec)
 
-    dummy_button2.after(int(1e-3), append_data)
+data_count_disp = tk.Label(root, font = myFont)
+data_count_disp.place(x=750, y=600)
 
-dummy_button2 = tk.Button(root, text="Example")
-dummy_button2.after(int(1e-3), append_data)
+data_count_text = tk.Label(root, text = 'Data Points Processed', font = myFont)
+data_count_text.place(x=575, y=600)
 
 def write_to_file():
 
@@ -163,7 +163,7 @@ button_record = tk.Button(root, #this button is an edited version of the start_s
     text="Start recording",
     width = 15,
     height = 2,
-    command = lambda: [append_data()],
+    command = lambda: [append_data()],#, data_count()],
     bg = "blue",
     fg = "white",
     font = myFont,
@@ -184,5 +184,5 @@ button_quit = tk.Button(root,
     )
 button_quit.place(x=850,y=650)
 
+record()
 root.mainloop()
-
