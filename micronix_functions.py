@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jan 15 15:19:44 2021
-
 @author: Nathan Drouillard
 """
 
@@ -9,12 +8,12 @@ import serial
 
 #%% Open the COM port
 
-ser = serial.Serial('COM3',38400,timeout=10)
+ser = serial.Serial('/dev/ttyUSB_MICRONIX',38400)
 
 #%% Home the stage
 
 def home():
-    
+
     ser.write(b'1HOM\r')
     ser.write(b'1WST\r')
     ser.flush()
@@ -31,11 +30,11 @@ def home():
 def params():
     min_pos = -1
     max_pos = 1
-    
+
     ser.write(b'1VEL5.0\r') #set velocity to 5 mm/s
     ser.flush()
     velset = ser.readline()
-    
+
     min_pos_str = "1TLN" + str(min_pos) + "\r"
     # ser.write(b'1POS?\r')
     # ser.write(b'1MVA0\r')
@@ -43,13 +42,13 @@ def params():
     ser.write(min_pos_byt) #write it to the controller
     ser.flush()
     neglim = ser.readline()
-    
+
     max_pos_str = "1TLP" + str(max_pos) + "\r"
     max_pos_byt = str.encode(max_pos_str)
     ser.write(max_pos_byt)
     ser.flush()
     poslim = ser.readline()
-    
+
     ser.write(b'1EPL1\r') #ensure the correct encoder polarity for the feedback loop
     ser.flush()
     polset = ser.readline()
@@ -84,8 +83,7 @@ def move():
 #%% Close COM port (important)
 
 def close():
-    
-    ser.close()
-    
-    
 
+    ser.close()
+
+move()
