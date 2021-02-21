@@ -38,7 +38,7 @@ root.title("FTIR GUI")
 myFont = tk.font.Font(family='Helvetica', size=15, weight='bold')
 
 #%% Major variables
-scanRate = 2000000 #1000000 is the default sample rate of the BitScope
+scanRate = 20000000 #1000000 is the default sample rate of the BitScope
 global Nt, now
 Nt = 5000 #maximum number of points from BitScope
 myFont = ("Helvetica",12)
