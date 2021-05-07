@@ -1,9 +1,7 @@
 """
-Created on Sun Feb 21 2021
-
+Created on Fri May 7 2021
 @author: Nathan Drouillard, modified from BitScope_GUI_fast.py
 A special thanks is owed to Aananth Kanagaraj (Codenio)
-
 Notes: -use BL_STREAM mode in bitlib_read_data_for_GUI
        -the stage functions are from "micronix_functions(Feb21).py"
 """
@@ -61,12 +59,11 @@ ser = serial.Serial('/dev/ttyUSB_MICRONIX',38400)
 def bitscope_setup(rate,size):
     TRUE = 1
     FALSE = 0
-
     #Setup general parameters for the capture
     MY_RATE = rate # default sample rate in Hz we'll use for capture.
     MY_SIZE = size # number of samples we'll capture - 12288 is the maximum size
 
-    #     x = np.arange(MY_SIZE)/float(MY_RATE)
+#     x = np.arange(MY_SIZE)/float(MY_RATE)
 
     print("Starting: Attempting to open one devices...")
 
@@ -74,7 +71,7 @@ def bitscope_setup(rate,size):
     #Make sure you run 'cd /dev/' followed by 'ls ' on terminal to see if the device is present.
 
     #See return value to see the number of successfully opened devices.
-    if (BL_Open('USB:/dev/ttyUSB0',1)==0):
+    if (BL_Open('USB:/dev/ttyUSB_BITSCOPE',1)==0):
     #if (BL_Open('USB:/dev/ttyUSB_BITSCOPE',1)==0):
         print("  FAILED: all devices not found (check your probe file)."    )
     else:
@@ -88,8 +85,8 @@ def bitscope_setup(rate,size):
 
         #Setup acquisition in FAST mode, where the whole of the 12288 samples in
         #the buffer are used by one channel alone.
-        #BL_Mode(BL_MODE_FAST)
-        BL_Mode(BL_MODE_STREAM)
+        BL_Mode(BL_MODE_FAST)
+        #BL_Mode(BL_MODE_STREAM)
 
         #Report the capture details
         print(" Capture: %d @ %.0fHz = %fs" , (BL_Size(),BL_Rate(MY_RATE),BL_Time()))
@@ -112,12 +109,6 @@ def bitscope_setup(rate,size):
         BL_Select(BL_SELECT_SOURCE,BL_SOURCE_POD); # use the POD input - the only one available
         BL_Range(BL_Count(BL_COUNT_RANGE)); # maximum range for y-axis - use this whenever possible
         BL_Offset(BL_ZERO); # Y-axis offset is set to zero as BL_ZERO
-
-        #Enable the currently selected channel, i.e. channel A
-        #This ensures the recorded data goes into the memory-buffer in Bitscope device
-        BL_Enable(TRUE);
-
-        print(" Bitscope Enabled")
 
 #%% Home the stage
 def home():
@@ -175,7 +166,7 @@ def params():
     ser.write(b'4DBD5,0\r') #set closed loop deadband parameters (0 means it will never timeout)
     ser.flush()
     time.sleep(1)
-    #print("Params set")
+    print("Params set")
     #dbdset = ser.readline()
 
 #%% Close COM port (important)
@@ -195,62 +186,88 @@ all_y = np.empty(1)
 all_w_vec = np.empty(1)
 all_yw_vec = np.empty(1)
 old_time = 0
+DATA1 = np.empty(1)
+DATA2 = np.empty(1)
 
 def record():
 
     global Nt, scanRate, old_time
     global t_vec, y, w_vec, yw_vec, tic, all_t_vec, all_y, all_w_vec, all_yw_vec
-
+    TRUE = 1
+    FALSE = 0
+    params()
     bitscope_setup(scanRate,Nt)
-    ser.write(b'1MLN\r') #move to negative limit
-    time.sleep(1)
-    #print("moved neg")
-    ser.flush()
-    #Capture analog data synchronously to the Bitscope device's buffer.
-    #If a trigger event is not received in 0.1sec, auto trigger happens.
-    BL_Trace()#, when without any arguments, captures immediately, no trigger needed.
-    #print("trace {}",format(BL_Trace(0.01, BL_SYNCHRONOUS)))
+    
+    MY_RATE = 200000
+    #Enable the currently selected channel, i.e. channel A
+    #This ensures the recorded data goes into the memory-buffer in Bitscope device
+    for i in range(0,4):
+        BL_Enable(TRUE);
 
-    #Transfer the captured data to our PC's memory using the USB link
-    DATA1 = BL_Acquire()
-    #x = np.arange(len(DATA))/float(MY_RATE)
+        print(" Bitscope Enabled")
+        #Capture analog data synchronously to the Bitscope device's buffer.
+        #If a trigger event is not received in 0.1sec, auto trigger happens.
+        BL_Trace()#, when without any arguments, captures immediately, no trigger needed.
+        print("trace {}",format(BL_Trace(0.01, BL_SYNCHRONOUS)))
 
-    ser.write(b'1WST\r')
-    time.sleep(1)
-    ser.flush()
+        #Transfer the captured data to our PC's memory using the USB link
+        DATA = BL_Acquire()
+        x = np.arange(len(DATA))/float(MY_RATE)
+        
+        
+        # ser.write(b'1PGL0\r') #loop program continuously
+        ser.write(b'1MLN\r') #move to negative limit
+        time.sleep(1)
+        print("moved neg")
+        # ser.write(b'1MVA-2\r')
+        ser.flush()
+        ser.write(b'1WST\r')
+        time.sleep(1)
+        ser.flush()
+        BL_Enable(TRUE);
 
-    #bitscope_setup()
-    ser.write(b'1MLP\r') #move to positive limit
-    # ser.write(b'1MVA2\r')
-    time.sleep(1)
-    ser.flush()
-    #BL_TRACE()
-    DATA2 = BL_Acquire()
-    ser.write(b'1WST\r')
-    time.sleep(1)
-    ser.flush()
-    #movedpos = ser.readline()
-    #ser.flush()
-    #print("movedpos")
+        print(" Bitscope Enabled")
+        #Capture analog data synchronously to the Bitscope device's buffer.
+        #If a trigger event is not received in 0.1sec, auto trigger happens.
+        BL_Trace()#, when without any arguments, captures immediately, no trigger needed.
+        print("trace {}",format(BL_Trace(0.01, BL_SYNCHRONOUS)))
 
-    y = np.append(DATA1,DATA2)
-    tmin = old_time
-    tmax = time.perf_counter()
-    old_time = tmax
-    t_vec = np.linspace(tmin,tmax,len(y))
-    dt = t_vec[1]-t_vec[0]
-    w_vec = 2*np.pi/(2*dt)*np.linspace(-1,1,len(y))
-    dw = w_vec[1]-w_vec[0]
-    yw_vec = np.fft.fftshift(np.fft.fft(np.fft.fftshift(y)))
+        #Transfer the captured data to our PC's memory using the USB link
+        DATA = BL_Acquire()
+        x = np.arange(len(DATA))/float(MY_RATE)
+        #movedneg = ser.readline()
+        #ser.flush()
+        #print(movedneg)
+        # ser.write(b'1WTM5000\r') #wait for 5000 ms
+        ser.write(b'1MLP\r') #move to positive limit
+        # ser.write(b'1MVA2\r')
+        time.sleep(1)
+        ser.flush()
+        ser.write(b'1WST\r')
+        time.sleep(1)
+        ser.flush()
+        #movedpos = ser.readline()
+        #ser.flush()
+        print("movedpos")
 
-    all_y = np.append(all_y, y)
-    all_t_vec = np.append(all_t_vec, t_vec)
-    all_w_vec = np.append(all_w_vec, w_vec)
-    all_yw_vec = np.append(all_yw_vec, yw_vec)
+        y = np.append(DATA1,DATA2)
+        tmin = old_time
+        tmax = time.perf_counter()
+        old_time = tmax
+        t_vec = np.linspace(tmin,tmax,len(y))
+        dt = t_vec[1]-t_vec[0]
+        w_vec = 2*np.pi/(2*dt)*np.linspace(-1,1,len(y))
+        dw = w_vec[1]-w_vec[0]
+        yw_vec = np.fft.fftshift(np.fft.fft(np.fft.fftshift(y)))
 
-    count = len(all_yw_vec)
-    data_count_disp.config(text=count)
-    data_count_disp.after(int(1e-6),record)
+        all_y = np.append(all_y, y)
+        all_t_vec = np.append(all_t_vec, t_vec)
+        all_w_vec = np.append(all_w_vec, w_vec)
+        all_yw_vec = np.append(all_yw_vec, yw_vec)
+
+        count = len(all_yw_vec)
+        data_count_disp.config(text=count)
+        data_count_disp.after(int(1e-6),record)
 
     #return (t_vec, y, w_vec, yw_vec)
 
@@ -381,5 +398,5 @@ button_quit = tk.Button(root,
     )
 #button_quit.place(x=850,y=640)
 
-params()
+#params()
 root.mainloop()
