@@ -24,7 +24,7 @@ def home():
     print("stopped")
     ser.flush()
     #isstopped = ser.readline()
-    ser.write(b'1ZRO\r')
+    #ser.write(b'1ZRO\r')
     time.sleep(1)
     ser.flush()
     #zeroed = ser.readline()
@@ -74,6 +74,8 @@ def params():
 
 #%% Move the stage (moves one way, but not back and forth)
 
+ser.write(b'1MVA-2\r')
+
 def move():
 
     #home()
@@ -93,6 +95,46 @@ def move():
         #ser.flush()
         #print(movedneg)
         # ser.write(b'1WTM5000\r') #wait for 5000 ms
+        ser.write(b'1POS?\r')
+        pos = ser.readline()
+        print(pos)
+        time.sleep(1)
+        ser.flush()
+        ser.write(b'1MLP\r') #move to positive limit
+        # ser.write(b'1MVA2\r')
+        time.sleep(1)
+        ser.flush()
+        ser.write(b'1WST\r')
+        time.sleep(1)
+        ser.flush()
+        #movedpos = ser.readline()
+        #ser.flush()
+        print("movedpos")
+
+def move_and_read_pos():
+        #home()
+    #time.sleep()
+    #params()
+    for i in range(0,4):
+        # ser.write(b'1PGL0\r') #loop program continuously
+        ser.write(b'1MLN\r') #move to negative limit
+        time.sleep(1)
+        print("moved neg")
+        # ser.write(b'1MVA-2\r')
+        ser.flush()
+        ser.write(b'1WST\r')
+        time.sleep(1)
+        ser.flush()
+        #movedneg = ser.readline()
+        #ser.flush()
+        #print(movedneg)
+        # ser.write(b'1WTM5000\r') #wait for 5000 ms
+        pos = ser.write(b'1POS?\r')
+        print(pos)
+        #pos = ser.readline()
+        #poslst = pos.split(",")
+        #actpos = poslst[1]
+        #print(actpos)
         ser.write(b'1MLP\r') #move to positive limit
         # ser.write(b'1MVA2\r')
         time.sleep(1)
@@ -109,9 +151,11 @@ def move():
 def close():
 
     ser.close()
+    print("Closed")
 
+#params()
 home()
-params()
 #time.sleep(1)
-move()
+#move()
+move_and_read_pos()
 #close()
