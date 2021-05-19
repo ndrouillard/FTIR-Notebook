@@ -321,11 +321,16 @@ def write_to_file():
 
     global all_t_vec, all_y, all_w_vec, all_yw_vec
     #(t,y,w,yw) = append_data()
-    data = np.array([all_t_vec[1:],all_y[1:],all_w_vec[1:],all_yw_vec[1:]])
-    data = data.T
-    df = DataFrame(data, columns = ['Time','Voltage','Frequency', 'Intensity'])
+    #data = np.array([all_t_vec[1:],all_y[1:],all_w_vec[1:],all_yw_vec[1:]])
+    #data = data.T
+    df = pd.DataFrame(all_t_vec[1:])
+    df['delay'] = pd.Series(all_t_vec[1:])
+    df['voltage'] = pd.Series(all_y[1:])
+    df['wavenumber'] = pd.Series(all_w_vec[1:])
+    df['intensity'] = pd.Series(all_yw_vec[1:])
+    #df = DataFrame(data, columns = ['Time','Voltage','Frequency', 'Intensity'])
     #df = DataFrame(zip(),columns = ['Time','Voltage','Frequency', 'Intensity'])
-    file = open("/home/pi/Documents/BitScope Data"+ now +"save_test.csv","a")
+    file = open("/home/pi/Documents/BitScope Data"+ now +".csv","a")
     df.to_csv (file, sep=',', index = False, header=True)
 
     print("Data saved")
